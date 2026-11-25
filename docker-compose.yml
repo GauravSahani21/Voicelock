@@ -1,0 +1,20 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: voicelock-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-voicelock}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-voicelock}
+      POSTGRES_DB: ${POSTGRES_DB:-voicelock}
+    ports:
+      - "5432:5432"
+    volumes:
+      - voicelock_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U voicelock -d voicelock"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  voicelock_pgdata:

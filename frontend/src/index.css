@@ -1,0 +1,227 @@
+@import "tailwindcss";
+
+:root {
+  --vl-font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --vl-font-display: "Plus Jakarta Sans", "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --vl-font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  --vl-bg-canvas: #fafafa;
+  --vl-bg-surface: #ffffff;
+  --vl-bg-subtle: #f4f4f5;
+  --vl-ink-primary: #09090b;
+  --vl-ink-secondary: #52525b;
+  --vl-ink-muted: #52525b;
+
+  --vl-border-hairline: rgba(9, 9, 11, 0.08);
+  --vl-border-control: #d4d4d8;
+  --vl-shadow-card: 0 1px 2px rgba(9, 9, 11, 0.04), 0 6px 20px -10px rgba(9, 9, 11, 0.07);
+  --vl-shadow-elevated: 0 2px 6px rgba(9, 9, 11, 0.04), 0 18px 40px -14px rgba(9, 9, 11, 0.11);
+  --vl-in-oklab: ;
+}
+
+@supports (background: linear-gradient(in oklab, white, black)) {
+  :root {
+    --vl-in-oklab: in oklab;
+  }
+}
+
+@layer base {
+  html {
+    background-color: var(--vl-bg-canvas);
+    color: var(--vl-ink-primary);
+  }
+
+  body {
+    font-family: var(--vl-font-sans);
+    background-color: var(--vl-bg-canvas);
+    color: var(--vl-ink-primary);
+    line-height: 1.5;
+    text-align: start;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--vl-font-display);
+    text-wrap: balance;
+  }
+
+  code,
+  kbd,
+  pre,
+  .font-mono {
+    font-family: var(--vl-font-mono);
+  }
+
+  :focus-visible {
+    outline: 2px solid #09090b;
+    outline-offset: 2px;
+  }
+}
+
+/* Minimal modern design utilities */
+.vl-display-title {
+  font-family: var(--vl-font-display);
+  font-size: clamp(1.75rem, 1.25rem + 2.2vw, 2.75rem);
+  line-height: 1.14;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+
+.vl-prose {
+  text-wrap: pretty;
+  max-inline-size: 65ch;
+}
+
+.vl-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.vl-hero-wash {
+  background-color: var(--vl-bg-canvas);
+  background-image:
+    radial-gradient(ellipse 75% 55% at 50% -10% var(--vl-in-oklab), rgba(37, 99, 235, 0.07), transparent 70%);
+}
+
+.vl-surface {
+  background-color: var(--vl-bg-surface);
+  border: 1px solid var(--vl-border-hairline);
+  box-shadow: var(--vl-shadow-card);
+}
+
+.vl-surface-interactive {
+  background-color: var(--vl-bg-surface);
+  border: 1px solid var(--vl-border-hairline);
+  box-shadow: var(--vl-shadow-card);
+  transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.vl-surface-interactive:hover {
+  border-color: var(--vl-border-strong, rgba(9, 9, 11, 0.16));
+  box-shadow: var(--vl-shadow-elevated);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vl-surface-interactive {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .vl-surface,
+  .vl-surface-interactive {
+    border: 1px solid CanvasText;
+    box-shadow: none;
+  }
+}
+
+/* Native <dialog> modal scroll containment (modern-web-guidance: dialog) */
+dialog:modal {
+  overscroll-behavior: contain;
+}
+
+dialog::backdrop {
+  background: rgba(9, 9, 11, 0.45);
+  backdrop-filter: blur(4px);
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+
+/* Post-interaction form validation (modern-web-guidance: validate-input-after-interaction) */
+:is(input, select, textarea):is(:user-invalid, .user-invalid-fallback) {
+  border-color: #dc2626;
+  background-color: #fef2f2;
+}
+
+:is(input, select, textarea):is(:user-valid, .user-valid-fallback) {
+  border-color: #16a34a;
+}
+
+.field-error-msg {
+  display: none;
+  color: #dc2626;
+  font-size: 0.8125rem;
+  margin-block-start: 0.25rem;
+}
+
+:is(input, select, textarea):is(:user-invalid, .user-invalid-fallback) + .field-error-msg,
+.field:has(:is(input, select, textarea):is(:user-invalid, .user-invalid-fallback)) .field-error-msg {
+  display: block;
+}
+
+/* Responsive data table container (modern-web-guidance: responsive-table) */
+.vl-table-wrapper {
+  overflow-x: auto;
+  inline-size: 100%;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  container-type: inline-size;
+}
+
+.vl-table-wrapper table {
+  border-collapse: separate;
+  border-spacing: 0;
+  inline-size: 100%;
+}
+
+.vl-table-wrapper thead {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 1;
+}
+
+@container (width < 640px) {
+  .vl-responsive-table,
+  .vl-responsive-table thead,
+  .vl-responsive-table tbody,
+  .vl-responsive-table tr,
+  .vl-responsive-table th,
+  .vl-responsive-table td {
+    display: block;
+    max-inline-size: 100%;
+  }
+
+  .vl-responsive-table thead {
+    display: none;
+  }
+
+  .vl-responsive-table tr {
+    margin-block-end: 0.75rem;
+    border: 1px solid #e4e4e7;
+    border-radius: 0.75rem;
+    background: #ffffff;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .vl-responsive-table td,
+  .vl-responsive-table tbody th {
+    padding: 0.35rem 0;
+    border: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+    text-align: right;
+    min-inline-size: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .vl-responsive-table td[data-label]::before,
+  .vl-responsive-table tbody th[data-label]::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #52525b;
+    text-align: left;
+    flex-shrink: 0;
+  }
+}
+
+.visually-hidden:where(:not(:focus-within, :active)) {
+  position: absolute !important;
+  clip-path: inset(50%) !important;
+  inline-size: 1px !important;
+  block-size: 1px !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+}

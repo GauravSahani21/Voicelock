@@ -1,0 +1,52 @@
+# Python / Backend
+backend/.venv/
+backend/__pycache__/
+backend/**/__pycache__/
+backend/**/*.pyc
+backend/**/*.pyo
+backend/.pytest_cache/
+backend/**/.pytest_cache/
+backend/*.egg-info/
+backend/dist/
+backend/build/
+backend/.env
+backend/.env.*
+!backend/.env.example
+backend/voicelock.db
+
+# Node / Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+
+# Root node_modules (Playwright install)
+node_modules/
+package-lock.json
+
+# Screenshots (too large for repo)
+voicelock-screenshots/
+
+# macOS
+.DS_Store
+**/.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Playwright
+take_screenshots.mjs
+playwright-report/
+test-results/
+
+# Whisper model cache
+*.pt
+*.bin
