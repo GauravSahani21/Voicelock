@@ -1,0 +1,95 @@
+{
+  "name": "VoiceSuraksha - 05 Sandbox Session Completed",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "voicesuraksha-sandbox",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-sandbox",
+      "name": "Sandbox Event Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "voicesuraksha-sandbox-completed"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst body = input.body || input;\n\nif (!body.event_id || body.event_type !== 'SANDBOX_SESSION_COMPLETED') {\n  return [{ json: { valid: false, notifyAdmin: false, reason: 'Ignored non-sandbox event' } }];\n}\n\nconst suspicious = ['REJECTED', 'REVIEW'].includes(body.decision) || body.voice_authenticity === 'SUSPICIOUS';\n\nreturn [{\n  json: {\n    valid: true,\n    notifyAdmin: suspicious,\n    summary: {\n      event_id: body.event_id,\n      session_id: body.session_id,\n      industry: body.industry,\n      action: body.action,\n      attack_type: body.attack_type || 'unknown',\n      decision: body.decision,\n      risk_level: body.risk_level,\n      timestamp: body.timestamp\n    }\n  }\n}];"
+      },
+      "id": "summarize-sandbox",
+      "name": "Generate Sandbox Test Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.notifyAdmin }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "if-suspicious-sandbox",
+      "name": "Suspicious Sandbox Test?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [720, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nreturn [{\n  json: {\n    status: 'sandbox_suspicious_admin_notified',\n    summary: item.summary,\n    notified_at: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "notify-suspicious-sandbox",
+      "name": "Notify Admin on Suspicious Test",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [960, 220]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "respond-sandbox",
+      "name": "Respond Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1200, 300]
+    }
+  ],
+  "connections": {
+    "Sandbox Event Webhook": {
+      "main": [[{ "node": "Generate Sandbox Test Summary", "type": "main", "index": 0 }]]
+    },
+    "Generate Sandbox Test Summary": {
+      "main": [[{ "node": "Suspicious Sandbox Test?", "type": "main", "index": 0 }]]
+    },
+    "Suspicious Sandbox Test?": {
+      "main": [
+        [{ "node": "Notify Admin on Suspicious Test", "type": "main", "index": 0 }],
+        [{ "node": "Respond Webhook", "type": "main", "index": 0 }]
+      ]
+    },
+    "Notify Admin on Suspicious Test": {
+      "main": [[{ "node": "Respond Webhook", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}

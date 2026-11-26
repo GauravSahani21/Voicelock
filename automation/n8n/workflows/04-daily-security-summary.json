@@ -1,0 +1,69 @@
+{
+  "name": "VoiceSuraksha - 04 Daily Security Summary",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * *"
+            }
+          ]
+        }
+      },
+      "id": "daily-schedule",
+      "name": "Daily 08:00 UTC Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ ($env.VOICESURAKSHA_API_URL || 'http://localhost:8000') + '/api/automation/reporting/daily?hours=24' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-VoiceSuraksha-Reporting-Key",
+              "value": "={{ $env.N8N_REPORTING_API_KEY || '' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "fetch-daily-stats",
+      "name": "Fetch Authenticated Daily Stats",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const stats = $input.first().json;\nconst report = [\n  `VoiceSuraksha Daily Security Summary (${stats.generated_at})`,\n  `Window: Last ${stats.window_hours}h`,\n  `Total Verifications: ${stats.total_verifications} (Sandbox: ${stats.sandbox_verifications})`,\n  `Approved: ${stats.approved} | Rejected: ${stats.rejected} | Review/Step-Up: ${stats.review}`,\n  `High-Risk Incidents: ${stats.high_risk_incidents}`,\n  `Industry Breakdown: ${JSON.stringify(stats.by_industry || {})}`\n].join('\\n');\n\nreturn [{\n  json: {\n    status: 'daily_report_generated',\n    recipient: 'security-admin@voicesuraksha.local',\n    report_text: report,\n    stats\n  }\n}];"
+      },
+      "id": "format-daily-report",
+      "name": "Format Daily Report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [720, 300]
+    }
+  ],
+  "connections": {
+    "Daily 08:00 UTC Trigger": {
+      "main": [[{ "node": "Fetch Authenticated Daily Stats", "type": "main", "index": 0 }]]
+    },
+    "Fetch Authenticated Daily Stats": {
+      "main": [[{ "node": "Format Daily Report", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}

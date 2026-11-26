@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api import (
     audit,
     auth,
+    automation,
     dashboard,
     decisions,
     demo,
@@ -16,6 +17,7 @@ from app.api import (
     health,
     policies,
     provider_status,
+    sandbox,
     sessions,
     simulator,
     tenants,
@@ -87,6 +89,8 @@ def create_app() -> FastAPI:
     app.include_router(workflows.router)
     app.include_router(simulator.router)
     app.include_router(demo.router)
+    app.include_router(sandbox.router)
+    app.include_router(automation.router)
 
     return app
 

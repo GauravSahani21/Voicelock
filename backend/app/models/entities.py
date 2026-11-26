@@ -312,3 +312,91 @@ class IndustryActionRecord(Base):
     summary: Mapped[str] = mapped_column(Text, nullable=False)
     payload_json: Mapped[Dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utcnow)
+
+
+class SandboxSession(Base):
+    """Interactive Security Sandbox & Attack Lab session linked to a real VerificationSession."""
+
+    __tablename__ = "sandbox_sessions"
+    __table_args__ = (
+        Index("ix_sandbox_tenant_created", "tenant_id", "created_at"),
+        Index("ix_sandbox_industry_decision", "industry", "decision_outcome"),
+        Index("ix_sandbox_operator_created", "operator_id", "created_at"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
+    verification_session_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("verification_sessions.id", ondelete="CASCADE"),
+        unique=True,
+        nullable=False,
+        index=True,
+    )
+    tenant_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    user_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    operator_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("operator_accounts.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    actor_reference: Mapped[str] = mapped_column(String(160), nullable=False)
+    industry: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    scenario_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    scenario_title: Mapped[str] = mapped_column(String(160), nullable=False)
+    requested_action: Mapped[str] = mapped_column(String(128), nullable=False)
+    resource_reference: Mapped[str] = mapped_column(String(255), nullable=False)
+    attack_type: Mapped[str] = mapped_column(String(64), nullable=False, default="genuine_speaker")
+    input_type: Mapped[str] = mapped_column(String(32), nullable=False, default="microphone")
+    decision_outcome: Mapped[Optional[str]] = mapped_column(String(32), nullable=True, index=True)
+    challenge_valid: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
+    aletheia_summary: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
+    eidos_summary: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
+    failure_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    audit_event_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utcnow)
+    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class WebhookDelivery(Base):
+    """Transactional outbox & durable delivery log for n8n security automation events."""
+
+    __tablename__ = "webhook_deliveries"
+    __table_args__ = (
+        Index("ix_webhook_status_next_retry", "status", "next_retry_at"),
+        Index("ix_webhook_created", "created_at"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
+    event_id: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, index=True)
+    event_type: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    session_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("verification_sessions.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    tenant_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("tenants.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    industry: Mapped[Optional[str]] = mapped_column(String(32), nullable=True, index=True)
+    target_url: Mapped[str] = mapped_column(String(512), nullable=False, default="")
+    payload_json: Mapped[Dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="PENDING", index=True)
+    attempt_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    max_attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=3)
+    next_retry_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    http_status: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    last_error: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    response_snippet: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utcnow)
+    delivered_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class AutomationConfig(Base):
+    """Runtime toggle state for n8n automation (secrets remain env-only)."""
+
+    __tablename__ = "automation_configs"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default="default")
+    enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    updated_by: Mapped[Optional[str]] = mapped_column(String(160), nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utcnow)

@@ -1,6 +1,7 @@
 import type {
   ApiErrorBody,
   AuditEventItem,
+  AutomationStatus,
   Challenge,
   DashboardOverview,
   DemoOverviewState,
@@ -13,11 +14,18 @@ import type {
   LoginResponse,
   OperatorProfile,
   ProviderStatus,
+  SandboxAnalytics,
+  SandboxEnvironment,
+  SandboxOverview,
+  SandboxSessionItem,
+  SandboxSessionList,
+  SandboxVerifyResponse,
   SessionDetail,
   SimulatorRunResponse,
   SimulatorScenario,
   Tenant,
   VerifySubmissionResponse,
+  WebhookDeliveryItem,
 } from '../types'
 
 const TOKEN_STORAGE_KEY = 'voicelock_access_token'
@@ -292,5 +300,60 @@ export const api = {
     apiRequest<DemoResetResponse>('/api/demo/reset', {
       method: 'POST',
       body: JSON.stringify({ clear_enrollments: clearEnrollments }),
+    }),
+
+  sandboxEnvironments: () => apiRequest<SandboxEnvironment[]>('/api/sandbox/environments'),
+  sandboxOverview: (tenantId?: string) =>
+    apiRequest<SandboxOverview>(
+      tenantId ? `/api/sandbox/overview?tenant_id=${encodeURIComponent(tenantId)}` : '/api/sandbox/overview',
+    ),
+  sandboxSessions: (params: Record<string, string | number | undefined> = {}) => {
+    const q = new URLSearchParams()
+    Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== '') q.set(k, String(v))
+    })
+    const qs = q.toString()
+    return apiRequest<SandboxSessionList>(qs ? `/api/sandbox/sessions?${qs}` : '/api/sandbox/sessions')
+  },
+  createSandboxSession: (payload: {
+    industry: string
+    scenario_id?: string
+    tenant_id?: string
+    user_id?: string
+    requested_action?: string
+    resource_reference?: string
+    attack_type?: string
+    input_type?: string
+  }) =>
+    apiRequest<SandboxSessionItem>('/api/sandbox/sessions', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  getSandboxSession: (sandboxSessionId: string) =>
+    apiRequest<SandboxSessionItem>(`/api/sandbox/sessions/${sandboxSessionId}`),
+  verifySandboxSession: (sandboxSessionId: string, formData: FormData) =>
+    apiRequest<SandboxVerifyResponse>(`/api/sandbox/sessions/${sandboxSessionId}/verify`, {
+      method: 'POST',
+      body: formData,
+    }),
+  sandboxAnalytics: () => apiRequest<SandboxAnalytics>('/api/sandbox/analytics'),
+
+  automationStatus: () => apiRequest<AutomationStatus>('/api/automation/status'),
+  automationToggle: (enabled: boolean) =>
+    apiRequest<AutomationStatus>('/api/automation/toggle', {
+      method: 'POST',
+      body: JSON.stringify({ enabled }),
+    }),
+  automationTestWebhook: () =>
+    apiRequest<WebhookDeliveryItem>('/api/automation/test-webhook', { method: 'POST' }),
+  automationDeliveries: (statusFilter?: string) =>
+    apiRequest<WebhookDeliveryItem[]>(
+      statusFilter
+        ? `/api/automation/deliveries?status=${encodeURIComponent(statusFilter)}`
+        : '/api/automation/deliveries',
+    ),
+  automationRetryDelivery: (deliveryId: string) =>
+    apiRequest<WebhookDeliveryItem>(`/api/automation/deliveries/${deliveryId}/retry`, {
+      method: 'POST',
     }),
 }

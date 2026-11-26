@@ -52,7 +52,16 @@ class Settings(BaseSettings):
 
     rate_limit_requests_per_minute: int = 120
 
-    @field_validator("detectif_base_url")
+    # n8n Security Automation Engine
+    n8n_enabled: bool = False
+    n8n_base_url: str = "http://localhost:5678"
+    n8n_webhook_url: str = ""
+    n8n_webhook_secret: str = ""
+    n8n_timeout_seconds: float = 8.0
+    n8n_max_retries: int = 3
+    n8n_reporting_api_key: str = ""
+
+    @field_validator("detectif_base_url", "n8n_base_url")
     @classmethod
     def strip_trailing_slash(cls, v: str) -> str:
         return v.rstrip("/")

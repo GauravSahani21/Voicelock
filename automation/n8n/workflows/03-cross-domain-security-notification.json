@@ -1,0 +1,95 @@
+{
+  "name": "VoiceSuraksha - 03 Cross-Domain Security Notification",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "voicesuraksha-cross-domain",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-cross-domain",
+      "name": "Cross-Domain Event Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "voicesuraksha-cross-domain-notify"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst body = input.body || input;\n\nconst isTelecomSuspicious = body.industry === 'TELECOM' && ['REJECTED', 'REVIEW'].includes(body.decision);\n\nreturn [{\n  json: {\n    shouldNotify: isTelecomSuspicious,\n    event_id: body.event_id,\n    source_domain: body.industry,\n    action: body.action,\n    decision: body.decision,\n    risk_level: body.risk_level,\n    advisory_note: 'NOTIFICATION DEMONSTRATION ONLY: n8n does not block banking operations or issue authorization decisions. FastAPI policy engine retains sole enforcement authority.'\n  }\n}];"
+      },
+      "id": "check-telecom-risk",
+      "name": "Evaluate Cross-Domain Advisory",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.shouldNotify }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "if-telecom-suspicious",
+      "name": "Suspicious Telecom Event?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [720, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const ev = $input.first().json;\nreturn [{\n  json: {\n    status: 'cross_domain_advisory_sent',\n    label: 'NOTIFICATION_DEMONSTRATION',\n    target_teams: ['BANKING_FRAUD_OPS', 'IT_HELPDESK_SEC'],\n    message: `Suspicious telecom ${ev.action} (${ev.decision}) detected. Recommend heightened vigilance for linked banking/helpdesk requests.`,\n    advisory_note: ev.advisory_note,\n    sent_at: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "dispatch-advisory",
+      "name": "Send Cross-Domain Advisory",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [960, 220]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "respond-cross-domain",
+      "name": "Respond Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1200, 300]
+    }
+  ],
+  "connections": {
+    "Cross-Domain Event Webhook": {
+      "main": [[{ "node": "Evaluate Cross-Domain Advisory", "type": "main", "index": 0 }]]
+    },
+    "Evaluate Cross-Domain Advisory": {
+      "main": [[{ "node": "Suspicious Telecom Event?", "type": "main", "index": 0 }]]
+    },
+    "Suspicious Telecom Event?": {
+      "main": [
+        [{ "node": "Send Cross-Domain Advisory", "type": "main", "index": 0 }],
+        [{ "node": "Respond Webhook", "type": "main", "index": 0 }]
+      ]
+    },
+    "Send Cross-Domain Advisory": {
+      "main": [[{ "node": "Respond Webhook", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}

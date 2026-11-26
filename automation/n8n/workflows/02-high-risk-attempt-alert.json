@@ -1,0 +1,95 @@
+{
+  "name": "VoiceSuraksha - 02 High-Risk Attempt Alert",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "voicesuraksha-high-risk",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-high-risk",
+      "name": "High-Risk Event Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "voicesuraksha-high-risk-alert"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst body = input.body || input;\n\nif (!body.event_id || !body.event_type) {\n  return [{ json: { isHighRisk: false, error: 'Invalid event payload' } }];\n}\n\nconst suspiciousVoice = body.voice_authenticity === 'SUSPICIOUS' || body.voice_authenticity === 'FAKE';\nconst speakerFailed = body.speaker_match === false;\nconst invalidChallenge = body.challenge_valid === false;\nconst isHighRisk = body.risk_level === 'HIGH' || suspiciousVoice || speakerFailed || invalidChallenge;\n\nconst triggers = [];\nif (suspiciousVoice) triggers.push('SUSPICIOUS_VOICE_AUTHENTICITY');\nif (speakerFailed) triggers.push('SPEAKER_VERIFICATION_FAILED');\nif (invalidChallenge) triggers.push('INVALID_CHALLENGE_PHRASE');\n\nreturn [{\n  json: {\n    isHighRisk,\n    severity: suspiciousVoice ? 'CRITICAL' : 'HIGH',\n    triggers,\n    event_id: body.event_id,\n    session_id: body.session_id,\n    industry: body.industry,\n    action: body.action,\n    decision: body.decision,\n    timestamp: body.timestamp\n  }\n}];"
+      },
+      "id": "classify-risk",
+      "name": "Classify High-Risk Signals",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.isHighRisk }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "if-high-risk",
+      "name": "Is High-Risk?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [720, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const ev = $input.first().json;\nreturn [{\n  json: {\n    status: 'high_risk_incident_recorded',\n    recipient: 'security-admin@voicesuraksha.local',\n    severity: ev.severity,\n    incident_summary: `High-risk voice attempt in ${ev.industry} (${ev.action}). Triggers: ${ev.triggers.join(', ')}. FastAPI Decision: ${ev.decision}.`,\n    event_id: ev.event_id,\n    recorded_at: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "record-high-risk",
+      "name": "Generate Admin Incident Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [960, 220]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "respond-high-risk",
+      "name": "Respond Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1200, 300]
+    }
+  ],
+  "connections": {
+    "High-Risk Event Webhook": {
+      "main": [[{ "node": "Classify High-Risk Signals", "type": "main", "index": 0 }]]
+    },
+    "Classify High-Risk Signals": {
+      "main": [[{ "node": "Is High-Risk?", "type": "main", "index": 0 }]]
+    },
+    "Is High-Risk?": {
+      "main": [
+        [{ "node": "Generate Admin Incident Summary", "type": "main", "index": 0 }],
+        [{ "node": "Respond Webhook", "type": "main", "index": 0 }]
+      ]
+    },
+    "Generate Admin Incident Summary": {
+      "main": [[{ "node": "Respond Webhook", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}

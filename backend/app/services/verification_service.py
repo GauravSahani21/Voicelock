@@ -540,6 +540,34 @@ def _finalize_decision(
     if token_record:
         db.refresh(token_record)
 
+    # Enqueue durable n8n webhook outbox event (never blocks or alters decision)
+    try:
+        from app.services.n8n_service import (
+            build_verification_event_payload,
+            dispatch_delivery_background,
+            enqueue_webhook_event,
+        )
+
+        tenant_obj = db.get(Tenant, session.tenant_id)
+        payload = build_verification_event_payload(
+            db=db,
+            session=session,
+            decision=decision,
+            event_type="VOICE_VERIFICATION_COMPLETED",
+        )
+        delivery = enqueue_webhook_event(
+            db,
+            payload=payload,
+            session_id=session.id,
+            tenant_id=session.tenant_id,
+            industry=tenant_obj.industry if tenant_obj else None,
+        )
+        db.commit()
+        if delivery and delivery.status == "PENDING":
+            dispatch_delivery_background(delivery.id)
+    except Exception:
+        db.rollback()
+
     return decision, raw_token, token_expires_at, token_record
 
 

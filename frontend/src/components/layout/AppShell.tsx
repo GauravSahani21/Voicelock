@@ -5,34 +5,46 @@ import {
   FileSearch,
   Mic,
   ShieldCheck,
-  Building2,
-  Swords,
   Sliders,
   ScrollText,
-  Code2,
   Settings,
   Bell,
   LogOut,
   Menu,
   X,
   ArrowLeft,
+  FlaskConical,
+  Workflow,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { useLivePolling } from '../../hooks/useLivePolling'
 import { api } from '../../services/api'
 import type { SessionDetail } from '../../types'
 
-const NAV_ITEMS = [
-  { to: '/security', label: 'Overview', icon: LayoutDashboard },
-  { to: '/security/requests', label: 'Verification Requests', icon: FileSearch },
-  { to: '/security/verify', label: 'Verification Workbench', icon: ShieldCheck },
-  { to: '/security/enrollment', label: 'Voice Enrollment', icon: Mic },
-  { to: '/security/workflows', label: 'Industry Workflows', icon: Building2 },
-  { to: '/security/simulator', label: 'Attack Simulator', icon: Swords },
-  { to: '/security/policies', label: 'Security Policies', icon: Sliders },
-  { to: '/security/audit', label: 'Audit Logs', icon: ScrollText },
-  { to: '/security/integration', label: 'API Integration', icon: Code2 },
-  { to: '/security/settings', label: 'Settings', icon: Settings },
+const NAV_GROUPS = [
+  {
+    heading: 'Live Monitoring',
+    items: [
+      { to: '/security', label: 'Overview', icon: LayoutDashboard },
+      { to: '/security/requests', label: 'Verification Requests', icon: FileSearch },
+      { to: '/security/audit', label: 'Audit Logs', icon: ScrollText },
+    ],
+  },
+  {
+    heading: 'Testing & Automation',
+    items: [
+      { to: '/security/sandbox', label: 'Security Sandbox', icon: FlaskConical },
+      { to: '/security/automation', label: 'Automation Center', icon: Workflow },
+    ],
+  },
+  {
+    heading: 'Configuration',
+    items: [
+      { to: '/security/enrollment', label: 'Voice Enrollment', icon: Mic },
+      { to: '/security/policies', label: 'Security Policies', icon: Sliders },
+      { to: '/security/settings', label: 'Settings', icon: Settings },
+    ],
+  },
 ]
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -87,28 +99,40 @@ export function AppShell({ children }: { children: ReactNode }) {
         <nav aria-label="Primary navigation" className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
           <Link
             to="/"
-            className="mb-3 flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/70 px-3 py-2 text-xs font-medium text-zinc-300 hover:text-white hover:bg-zinc-900 transition-colors"
+            className="mb-4 flex items-center justify-between gap-2 rounded-lg border border-zinc-800 bg-zinc-900/70 px-3 py-2 text-xs font-medium text-zinc-300 hover:text-white hover:bg-zinc-900 transition-colors"
           >
-            <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
-            <span>Back to Demo Portals</span>
+            <span className="flex items-center gap-2">
+              <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
+              <span>User Demo Portals</span>
+            </span>
+            <span className="text-[10px] text-zinc-500">Switch</span>
           </Link>
-          {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={to === '/security'}
-              className={({ isActive }) =>
-                `flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors ${
-                  isActive
-                    ? 'bg-white/12 text-white'
-                    : 'text-zinc-400 hover:bg-white/5 hover:text-zinc-100'
-                }`
-              }
-            >
-              <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
-              <span>{label}</span>
-            </NavLink>
-          ))}
+          <div className="space-y-4">
+            {NAV_GROUPS.map((group) => (
+              <div key={group.heading} className="space-y-0.5">
+                <div className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                  {group.heading}
+                </div>
+                {group.items.map(({ to, label, icon: Icon }) => (
+                  <NavLink
+                    key={to}
+                    to={to}
+                    end={to === '/security'}
+                    className={({ isActive }) =>
+                      `flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors ${
+                        isActive
+                          ? 'bg-white/12 text-white'
+                          : 'text-zinc-400 hover:bg-white/5 hover:text-zinc-100'
+                      }`
+                    }
+                  >
+                    <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                    <span>{label}</span>
+                  </NavLink>
+                ))}
+              </div>
+            ))}
+          </div>
         </nav>
 
         <div className="p-4 border-t border-zinc-800/80 text-[11px] text-zinc-400 space-y-1">
@@ -148,26 +172,35 @@ export function AppShell({ children }: { children: ReactNode }) {
             <nav aria-label="Mobile navigation" className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
               <Link
                 to="/"
-                className="mb-3 flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-xs font-medium text-zinc-300"
+                className="mb-4 flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-xs font-medium text-zinc-300"
               >
                 <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
-                <span>Back to Demo Portals</span>
+                <span>User Demo Portals</span>
               </Link>
-              {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
-                <NavLink
-                  key={to}
-                  to={to}
-                  end={to === '/security'}
-                  className={({ isActive }) =>
-                    `flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium ${
-                      isActive ? 'bg-white/12 text-white' : 'text-zinc-400 hover:bg-white/5 hover:text-white'
-                    }`
-                  }
-                >
-                  <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
-                  <span>{label}</span>
-                </NavLink>
-              ))}
+              <div className="space-y-4">
+                {NAV_GROUPS.map((group) => (
+                  <div key={group.heading} className="space-y-0.5">
+                    <div className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                      {group.heading}
+                    </div>
+                    {group.items.map(({ to, label, icon: Icon }) => (
+                      <NavLink
+                        key={to}
+                        to={to}
+                        end={to === '/security'}
+                        className={({ isActive }) =>
+                          `flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium ${
+                            isActive ? 'bg-white/12 text-white' : 'text-zinc-400 hover:bg-white/5 hover:text-white'
+                          }`
+                        }
+                      >
+                        <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                        <span>{label}</span>
+                      </NavLink>
+                    ))}
+                  </div>
+                ))}
+              </div>
             </nav>
           </aside>
         </div>

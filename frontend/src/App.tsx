@@ -19,6 +19,8 @@ import { SecurityPolicies } from './pages/SecurityPolicies'
 import { AuditLogs } from './pages/AuditLogs'
 import { ApiIntegration } from './pages/ApiIntegration'
 import { Settings } from './pages/Settings'
+import { SecuritySandbox } from './pages/SecuritySandbox'
+import { AutomationCenter } from './pages/AutomationCenter'
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const { operator, isLoading } = useAuth()
@@ -65,6 +67,8 @@ function AppRoutes() {
       <Route path="/security/enrollment" element={<ProtectedRoute><VoiceEnrollment /></ProtectedRoute>} />
       <Route path="/security/decisions/:id" element={<ProtectedRoute><DecisionDetail /></ProtectedRoute>} />
       <Route path="/security/workflows" element={<ProtectedRoute><IndustryWorkflows /></ProtectedRoute>} />
+      <Route path="/security/sandbox" element={<ProtectedRoute><SecuritySandbox /></ProtectedRoute>} />
+      <Route path="/security/automation" element={<ProtectedRoute><AutomationCenter /></ProtectedRoute>} />
       <Route path="/security/simulator" element={<ProtectedRoute><AttackSimulator /></ProtectedRoute>} />
       <Route path="/security/policies" element={<ProtectedRoute><SecurityPolicies /></ProtectedRoute>} />
       <Route path="/security/audit" element={<ProtectedRoute><AuditLogs /></ProtectedRoute>} />

@@ -303,3 +303,142 @@ export interface DemoResetResponse {
   enrollments_cleared: number
   tenants_seeded: number
 }
+
+export interface SandboxUserOption {
+  id: string
+  name: string
+  external_reference: string
+  role: string
+  enrolled: boolean
+}
+
+export interface SandboxEnvironment {
+  industry: IndustryType
+  industry_name: string
+  scenario_id: string
+  scenario_name: string
+  short_description: string
+  sensitivity_level: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
+  requested_action: string
+  attempt_summary: string
+  reference_label: string
+  tenant_id: string | null
+  tenant_name: string | null
+  users: SandboxUserOption[]
+}
+
+export interface SandboxSessionItem {
+  id: string
+  verification_session_id: string
+  tenant_id: string
+  tenant_name: string
+  user_id: string
+  user_name: string
+  user_external_reference: string
+  industry: string
+  scenario_id: string
+  scenario_title: string
+  requested_action: string
+  resource_reference: string
+  attack_type: string
+  input_type: string
+  decision_outcome: string | null
+  challenge_valid: boolean | null
+  aletheia_summary: string | null
+  eidos_summary: string | null
+  failure_reason: string | null
+  audit_event_id: string | null
+  created_at: string
+  completed_at: string | null
+  verification_session: SessionDetail | null
+}
+
+export interface SandboxOverview {
+  total_tests: number
+  approved_attempts: number
+  rejected_attempts: number
+  review_attempts: number
+  step_up_attempts: number
+  recent_sessions: SandboxSessionItem[]
+  latest_incidents: SandboxSessionItem[]
+}
+
+export interface SandboxSessionList {
+  items: SandboxSessionItem[]
+  total: number
+  limit: number
+  offset: number
+}
+
+export interface SandboxVerifyResponse {
+  sandbox_session: SandboxSessionItem
+  verification: VerifySubmissionResponse
+}
+
+export interface SandboxAnalytics {
+  summary: {
+    total_sandbox_tests: number
+    genuine_speaker_attempts: number
+    different_speaker_attempts: number
+    synthetic_voice_tests: number
+    approved_attempts: number
+    rejected_attempts: number
+    review_decisions: number
+    high_risk_incidents: number
+    automation_notifications: number
+    failed_webhook_deliveries: number
+  }
+  decisions_over_time: Array<{
+    date: string
+    APPROVED: number
+    REJECTED: number
+    REVIEW: number
+    STEP_UP: number
+  }>
+  attack_scenario_distribution: Record<string, number>
+  industry_testing_activity: Record<string, number>
+  incident_trends: Array<{ date: string; incidents: number }>
+  automation_execution_status: Record<string, number>
+}
+
+export interface WebhookDeliveryItem {
+  id: string
+  event_id: string
+  event_type: string
+  session_id: string | null
+  tenant_id: string | null
+  industry: string | null
+  target_url: string
+  status: string
+  attempt_count: number
+  max_attempts: number
+  http_status: number | null
+  last_error: string | null
+  payload_json: Record<string, unknown>
+  created_at: string
+  delivered_at: string | null
+}
+
+export interface AutomationWorkflowInfo {
+  id: string
+  filename: string
+  name: string
+  trigger: string
+  description: string
+  integration_note?: string
+}
+
+export interface AutomationStatus {
+  n8n_enabled: boolean
+  webhook_configured: boolean
+  webhook_url_masked: string
+  n8n_base_url: string
+  connection_status: 'connected' | 'unreachable' | 'disabled' | 'unconfigured'
+  total_events_sent: number
+  delivered_count: number
+  pending_count: number
+  failed_count: number
+  last_successful_delivery: string | null
+  last_failed_delivery: string | null
+  workflows: AutomationWorkflowInfo[]
+}

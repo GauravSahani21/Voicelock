@@ -1,0 +1,99 @@
+{
+  "name": "VoiceSuraksha - 01 Security Incident Alert",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "voicesuraksha-events",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "VoiceSuraksha Event Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "voicesuraksha-incident-alert"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst body = input.body || input;\n\nif (!body.event_id || !body.event_type || !body.decision) {\n  return [{ json: { valid: false, reason: 'Missing required event_id, event_type, or decision' } }];\n}\n\nconst staticData = $getWorkflowStaticData('global');\nstaticData.seenEvents = staticData.seenEvents || [];\nif (staticData.seenEvents.includes(body.event_id)) {\n  return [{ json: { valid: false, duplicate: true, event_id: body.event_id, reason: 'Duplicate event_id ignored' } }];\n}\nstaticData.seenEvents.push(body.event_id);\nif (staticData.seenEvents.length > 500) {\n  staticData.seenEvents = staticData.seenEvents.slice(-500);\n}\n\nconst isIncident = body.event_type === 'VOICE_VERIFICATION_COMPLETED' && ['REJECTED', 'REVIEW'].includes(body.decision);\nconst severity = body.decision === 'REJECTED' || body.voice_authenticity === 'SUSPICIOUS' ? 'CRITICAL' : 'MEDIUM';\n\nreturn [{\n  json: {\n    valid: true,\n    duplicate: false,\n    isIncident,\n    severity,\n    event_id: body.event_id,\n    event_type: body.event_type,\n    session_id: body.session_id,\n    industry: body.industry,\n    action: body.action,\n    decision: body.decision,\n    voice_authenticity: body.voice_authenticity,\n    speaker_match: body.speaker_match,\n    challenge_valid: body.challenge_valid,\n    risk_level: body.risk_level,\n    timestamp: body.timestamp\n  }\n}];"
+      },
+      "id": "validate-and-dedupe",
+      "name": "Validate & Deduplicate Event",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.valid }}",
+              "value2": true
+            },
+            {
+              "value1": "={{ $json.isIncident }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "filter-incident",
+      "name": "Decision is REJECTED or REVIEW?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [720, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const ev = $input.first().json;\nconst notification = {\n  alert_title: `[${ev.severity}] VoiceSuraksha Security Incident (${ev.industry})`,\n  event_id: ev.event_id,\n  session_id: ev.session_id,\n  industry: ev.industry,\n  action: ev.action,\n  decision: ev.decision,\n  voice_authenticity: ev.voice_authenticity,\n  speaker_match: ev.speaker_match,\n  challenge_valid: ev.challenge_valid,\n  summary: `Operation ${ev.action} in ${ev.industry} resulted in ${ev.decision}. Authenticity=${ev.voice_authenticity}, SpeakerMatch=${ev.speaker_match}.`,\n  notified_at: new Date().toISOString(),\n  channel: 'testable_notification_log'\n};\nreturn [{ json: { status: 'incident_notified', notification } }];"
+      },
+      "id": "format-notification",
+      "name": "Format Incident Notification",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [960, 220]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "respond-ok",
+      "name": "Respond Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1200, 300]
+    }
+  ],
+  "connections": {
+    "VoiceSuraksha Event Webhook": {
+      "main": [[{ "node": "Validate & Deduplicate Event", "type": "main", "index": 0 }]]
+    },
+    "Validate & Deduplicate Event": {
+      "main": [[{ "node": "Decision is REJECTED or REVIEW?", "type": "main", "index": 0 }]]
+    },
+    "Decision is REJECTED or REVIEW?": {
+      "main": [
+        [{ "node": "Format Incident Notification", "type": "main", "index": 0 }],
+        [{ "node": "Respond Webhook", "type": "main", "index": 0 }]
+      ]
+    },
+    "Format Incident Notification": {
+      "main": [[{ "node": "Respond Webhook", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}

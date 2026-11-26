@@ -23,10 +23,12 @@ from app.models.entities import (
     EndUser,
     IndustryActionRecord,
     OperatorAccount,
+    SandboxSession,
     SpeakerEnrollment,
     Tenant,
     VerificationResult,
     VerificationSession,
+    WebhookDelivery,
 )
 from app.schemas.auth import LoginResponse
 from app.services.audit_service import record_audit_event
@@ -208,6 +210,12 @@ def reset_demo_environment(
         )
         sessions_cleared = len(demo_session_ids)
 
+        db.execute(
+            delete(WebhookDelivery).where(WebhookDelivery.tenant_id.in_(demo_tenant_ids))
+        )
+        db.execute(
+            delete(SandboxSession).where(SandboxSession.tenant_id.in_(demo_tenant_ids))
+        )
         db.execute(
             delete(IndustryActionRecord).where(IndustryActionRecord.tenant_id.in_(demo_tenant_ids))
         )
